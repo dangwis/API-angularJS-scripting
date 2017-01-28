@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+  <title> 493 Artist Search</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+    <script src="script.js"></script>
+  </title>
+</head>
+<style>
+
+.hot{
+  background-image: url(hot.png);
+  background-size: 18px 20px;
+  background-repeat: no-repeat;
+  padding-left: 20px;
+}
+
+h5{
+  padding-bottom: 5px;
+  padding-top: 3px;
+}
+
+.genre{
+  border:solid 2px;
+  border-radius: 3px;
+  margin:5px;
+  white-space: nowrap;
+  background-color:#ccc;
+  padding:2px;
+}
+
+</style>
+<body ng-app = "493Search">
+<nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+       <h3><b>493 Artist Search</b></h3>
+    </div>
+  </div>
+</nav>
+<div class = "container" ng-controller="searchResult">
+  <div class = "row searchbar" >
+    <div class = "col-lg-12 col-md-12 col-sm-12">
+      <h4><b>Enter the name of the artist and enter : </b></h4>
+      <input type="text" ng-model = "artistName" ng-keyup="checkIfEnter($event)">       
+    </div>
+  </div>
+  <div class = "row">
+    <div class = "col-lg-12 col-md-12 col-sm-12">
+      <h4><b>Search Result (Total {{totalNum}} found.)</b></h4>
+      <h4>
+        <b>Click to see the detail.</b>
+      </h4>
+    </div>
+  </div>
+  <div class = "row" ng-repeat="artist in artistList" ng-if="$index % 4 == 0">
+    
+    <div class = "col-lg-3 col-md-3 col-sm-3">
+       {{modalTarget = "#myModal" + $index;""}}
+        {{modalID = "myModal" + $index;""}}
+      <div data-toggle="modal" data-target={{modalTarget}}  style="height:250px;overflow:hidden">
+        <h5 class= "hot" ng-if="isHot(artistList[$index])">
+            <b>{{artistOneLineName(artistList[$index])}}</b>
+        </h5>
+        <h5 ng-if="!isHot(artistList[$index])">
+            <b>{{artistOneLineName(artistList[$index])}}</b>
+        </h5>
+        <div >
+          <img src ={{getImageUrl(artistList[$index])}} style="max-width:100%; max-height:200px">
+        </div>
+      </div>
+      <div id= {{modalID}} class="modal fade" role = "dialog">
+        <div class="modal-dialog">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal">&times;</button><!-- close icon-->
+                  <h4 id="selectedArtistName" class="modal-title"><b>{{artistList[$index].name}}</b></h4>
+              </div>
+              <div class="modal-body">
+                  <a href={{openArtistInSpotify(artistList[$index])}} class="btn btn-default"><b> Open in Spotify</b></a>
+                  <h5> <b>Followers: {{artistList[$index].followers.total}}</b></h5>
+                  <h5> <b>Genre: {{getGenres(artistList[$index])}}</b></h5>
+                  <h5> <b>Popularity: {{artistList[$index].popularity}}</b></h5>
+                  <img src={{getImageUrl(artistList[$index])}} style="max-width:100%; max-height:400px">
+              </div>
+            <div class="modal-footer" ng-controller= "similarArtistsCtrl">
+              <div ng-if="!showRelated">
+                <button type="button" class="btn btn-default" ng-click="getSimilarArtists(artistList[$index])"><b>Get Similar Artists</b></button>
+              </div>
+              <div ng-if="showRelated">
+                  <b>Get Similar Artists</b>
+              </div>
+                <div class="similar-artists" ng-if="showRelated">
+                    <div class="row" ng-repeat="artist in relatedArtists" ng-if="$index % 4 == 0">                     
+                        <div class="col-lg-3 col-md-3 col-sm-3">
+                            <h5>
+                                <b>{{artist15Char(relatedArtists[$index])}}</b>
+                            </h5>
+                            <div>
+                                <img src={{$parent.getImageUrl(relatedArtists[$index])}} style="max-width:100%; max-height:200px">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 col-sm-3" ng-if="$index + 1 < relatedArtists.length">
+                            {{rel = $index + 1;""}}
+                            <h5>
+                                <b>{{artist15Char(relatedArtists[rel])}}</b>
+                            </h5>
+                            <div>
+                                <img src={{$parent.getImageUrl(relatedArtists[rel])}} style="max-width:100%; max-height:200px">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 col-sm-3" ng-if="$index + 2 < relatedArtists.length">
+                            {{rel = $index + 2;""}}
+                            <h5>
+                                <b>{{artist15Char(relatedArtists[rel])}}</b>
+                            </h5>
+                            <div>
+                                <img src={{$parent.getImageUrl(relatedArtists[rel])}} style="max-width:100%; max-height:200px">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 col-sm-3" ng-if="$index + 3 < relatedArtists.length">
+                            {{rel = $index + 3;""}}
+                            <h5>
+                                <b>{{artist15Char(relatedArtists[rel])}}</b>
+                            </h5>
+                            <div>
+                                <img src={{$parent.getImageUrl(relatedArtists[rel])}} style="max-width:100%; max-height:200px">
+                            </div>
+                        </div>
+                   </div>
+               </div>
+                <div>
+                <br>
+                <button type="button" class="btn btn-default" data-dismiss = "modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- end of myModal-->
+    </div>
+      <div class="col-lg-3 col-md-3 col-sm-3" ng-if="$index + 1 < artistList.length">
+          {{temp = $index + 1;""}}
+          {{modalTarget = "#myModal" + temp;""}}
+          {{modalID = "myModal" + temp;""}}
+          <div data-toggle="modal" data-target={{modalTarget}} style="height:250px;overflow:hidden">
+              <h5 class="hot" ng-if="isHot(artistList[temp])">
+                  <b>{{artistOneLineName(artistList[temp])}}</b>
+              </h5>
+              <h5 ng-if="!isHot(artistList[temp])">
+                  <b>{{artistOneLineName(artistList[temp])}}</b>
+              </h5>
+              <div>
+                  <img src={{getImageUrl(artistList[temp])}} style="max-width:100%; max-height:200px">
+              </div>
+          </div>
+          <div id={{modalID}} class="modal fade" role="dialog">
+              <div class="modal-dialog">
+                  <div class="modal-content">
+                      <div class="modal-header">
+                          <button type="button" class="close" data-dismiss="modal">&times;</button><!-- close icon-->
+                          <h4 id="selectedArtistName" class="modal-title"><b>{{artistList[temp].name}}</b></h4>
+                      </div>
+                      <div class="modal-body">
+                          <a href={{openArtistInSpotify(artistList[temp])}} class="btn btn-default"><b> Open in Spotify</b></a>
+                          <h5> <b>Followers: {{artistList[temp].followers.total}}</b></h5>
+                          <h5> <b>Genre: {{getGenres(artistList[temp])}}</b></h5>
+                          <h5> <b>Popularity: {{artistList[temp].popularity}}</b></h5>
+                          <img src={{getImageUrl(artistList[temp])}} style="max-width:100%; max-height:400px">
+                      </div>
+                      <div class="modal-footer" ng-controller="similarArtistsCtrl">
+                          <div ng-if="!showRelated">
+                              <button type="button" class="btn btn-default" ng-click="getSimilarArtists(artistList[temp])"><b>Get Similar Artists</b></button>
+                          </div>
+                          <div ng-if="showRelated">
+                              <b>Get Similar Artists</b>
+                          </div>
+                          <div class="similar-artists" ng-if="showRelated">
+                              
+                              <div class="row" ng-repeat="artist in relatedArtists" ng-if="$index % 4 == 0">
+                                  <div class="col-lg-3 col-md-3 col-sm-3">
+                                      <h5>
+                                          <b>{{artist15Char(relatedArtists[$index])}}</b>
+                                      </h5>
+                                      <div>
+                                          <img src={{$parent.getImageUrl(relatedArtists[$index])}} style="max-width:100%; max-height:200px">
+                                      </div>
+                                  </div>
+                                  <div class="col-lg-3 col-md-3 col-sm-3" ng-if="$index + 1 < relatedArtists.length">
+                                      {{rel = $index + 1;""}}
+                                      <h5>
+                                          <b>{{artist15Char(relatedArtists[rel])}}</b>
+                                      </h5>
+                                      <div>
+                                          <img src={{$parent.getImageUrl(relatedArtists[rel])}} style="max-width:100%; max-height:200px">
+                                      </div>
+                                  </div>
+                                  <div class="col-lg-3 col-md-3 col-sm-3" ng-if="$index + 2 < relatedArtists.length">
+                                      {{rel = $index + 2;""}}
+                                      <h5>
+                                          <b>{{artist15Char(relatedArtists[rel])}}</b>
+                                      </h5>
+                                      <div>
+                                          <img src={{$parent.getImageUrl(relatedArtists[rel])}} style="max-width:100%; max-height:200px">
+                                      </div>
+                                  </div>
+                                  <div class="col-lg-3 col-md-3 col-sm-3" ng-if="$index + 3 < relatedArtists.length">
+                                      {{rel = $index + 3;""}}
+                                      <h5>
+                                          <b>{{artist15Char(relatedArtists[rel])}}</b>
+                                      </h5>
+                                      <div>
+                                          <img src={{$parent.getImageUrl(relatedArtists[rel])}} style="max-width:100%; max-height:200px">
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                          <div>
+                              <br>
+                              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          
+      </div>
+      <div class="col-lg-3 col-md-3 col-sm-3" ng-if="$index + 2 < artistList.length">
+          {{temp = $index + 2;""}}
+          {{modalTarget = "#myModal" + temp;""}}
+          {{modalID = "myModal" + temp;""}}
+          <div data-toggle="modal" data-target={{modalTarget}} style="height:250px;overflow:hidden">
+              <h5 class="hot" ng-if="isHot(artistList[temp])">
+                  <b>{{artistOneLineName(artistList[temp])}}</b>
+              </h5>
+              <h5 ng-if="!isHot(artistList[temp])">
+                  <b>{{artistOneLineName(artistList[temp])}}</b>
+              </h5>
+              <div>
+                  <img src={{getImageUrl(artistList[temp])}} style="max-width:100%; max-height:200px">
+              </div>
+          </div>
+          <div id={{modalID}} class="modal fade" role="dialog">
+              <div class="modal-dialog">
+                  <div class="modal-content">
+                      <div class="modal-header">
+                          <button type="button" class="close" data-dismiss="modal">&times;</button><!-- close icon-->
+                          <h4 id="selectedArtistName" class="modal-title"><b>{{artistList[temp].name}}</b></h4>
+                      </div>
+                      <div class="modal-body">
+                          <a href={{openArtistInSpotify(artistList[temp])}} class="btn btn-default"><b> Open in Spotify</b></a>
+                          <h5> <b>Followers: {{artistList[temp].followers.total}}</b></h5>
+                          <h5> <b>Genre: {{getGenres(artistList[temp])}}</b></h5>
+                          <h5> <b>Popularity: {{artistList[temp].popularity}}</b></h5>
+                          <img src={{getImageUrl(artistList[temp])}} style="max-width:100%; max-height:400px">
+                      </div>
+                      <div class="modal-footer" ng-controller="similarArtistsCtrl">
+                          <div ng-if="!showRelated">
+                              <button type="button" class="btn btn-default" ng-click="getSimilarArtists(artistList[temp])"><b>Get Similar Artists</b></button>
+                          </div>
+                          <div ng-if="showRelated">
+                              <b>Get Similar Artists</b>
+                          </div>
+                          <div class="similar-artists" ng-if="showRelated">
+                              
+                              <div class="row" ng-repeat="artist in relatedArtists" ng-if="$index % 4 == 0">
+                                  <div class="col-lg-3 col-md-3 col-sm-3">
+                                      <h5>
+                                          <b>{{artist15Char(relatedArtists[$index])}}</b>
+                                      </h5>
+                                      <div>
+                                          <img src={{$parent.getImageUrl(relatedArtists[$index])}} style="max-width:100%; max-height:200px">
+                                      </div>
+                                  </div>
+                                  <div class="col-lg-3 col-md-3 col-sm-3" ng-if="$index + 1 < relatedArtists.length">
+                                      {{rel = $index + 1;""}}
+                                      <h5>
+                                          <b>{{artist15Char(relatedArtists[rel])}}</b>
+                                      </h5>
+                                      <div>
+                                          <img src={{$parent.getImageUrl(relatedArtists[rel])}} style="max-width:100%; max-height:200px">
+                                      </div>
+                                  </div>
+                                  <div class="col-lg-3 col-md-3 col-sm-3" ng-if="$index + 2 < relatedArtists.length">
+                                      {{rel = $index + 2;""}}
+                                      <h5>
+                                          <b>{{artist15Char(relatedArtists[rel])}}</b>
+                                      </h5>
+                                      <div>
+                                          <img src={{$parent.getImageUrl(relatedArtists[rel])}} style="max-width:100%; max-height:200px">
+                                      </div>
+                                  </div>
+                                  <div class="col-lg-3 col-md-3 col-sm-3" ng-if="$index + 3 < relatedArtists.length">
+                                      {{rel = $index + 3;""}}
+                                      <h5>
+                                          <b>{{artist15Char(relatedArtists[rel])}}</b>
+                                      </h5>
+                                      <div>
+                                          <img src={{$parent.getImageUrl(relatedArtists[rel])}} style="max-width:100%; max-height:200px">
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                          <div>
+                              <br>
+                              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          <!-- end of myModal-->
+      </div>
+      <div class="col-lg-3 col-md-3 col-sm-3" ng-if="$index + 3 < artistList.length">
+          {{temp = $index + 3;""}}
+          {{modalTarget = "#myModal" + temp;""}}
+          {{modalID = "myModal" + temp;""}}
+          <div data-toggle="modal" data-target={{modalTarget}} style="height:250px;overflow:hidden">
+              <h5 class="hot" ng-if="isHot(artistList[temp])">
+                  <b>{{artistOneLineName(artistList[temp])}}</b>
+              </h5>
+              <h5 ng-if="!isHot(artistList[temp])">
+                  <b>{{artistOneLineName(artistList[temp])}}</b>
+              </h5>
+              <div>
+                  <img src={{getImageUrl(artistList[temp])}} style="max-width:100%; max-height:200px">
+              </div>
+          </div>
+          <div id={{modalID}} class="modal fade" role="dialog">
+              <div class="modal-dialog">
+                  <div class="modal-content">
+                      <div class="modal-header">
+                          <button type="button" class="close" data-dismiss="modal">&times;</button><!-- close icon-->
+                          <h4 id="selectedArtistName" class="modal-title"><b>{{artistList[temp].name}}</b></h4>
+                      </div>
+                      <div class="modal-body">
+                          <a href={{openArtistInSpotify(artistList[temp])}} class="btn btn-default"><b> Open in Spotify</b></a>
+                          <h5> <b>Followers: {{artistList[temp].followers.total}}</b></h5>
+                          <h5> <b>Genre: {{getGenres(artistList[temp])}}</b></h5>
+                          <h5> <b>Popularity: {{artistList[temp].popularity}}</b></h5>
+                          <img src={{getImageUrl(artistList[temp])}} style="max-width:100%; max-height:400px">
+                      </div>
+                      <div class="modal-footer" ng-controller="similarArtistsCtrl">
+                          <div ng-if="!showRelated">
+                              <button type="button" class="btn btn-default" ng-click="getSimilarArtists(artistList[temp])"><b>Get Similar Artists</b></button>
+                          </div>
+                          <div ng-if="showRelated">
+                              <b>Get Similar Artists</b>
+                          </div>
+                          <div class="similar-artists" ng-if="showRelated">
+                              
+                              <div class="row" ng-repeat="artist in relatedArtists" ng-if="$index % 4 == 0">
+                                  <div class="col-lg-3 col-md-3 col-sm-3">
+                                      <h5>
+                                          <b>{{artist15Char(relatedArtists[$index])}}</b>
+                                      </h5>
+                                      <div>
+                                          <img src={{$parent.getImageUrl(relatedArtists[$index])}} style="max-width:100%; max-height:200px">
+                                      </div>
+                                  </div>
+                                  <div class="col-lg-3 col-md-3 col-sm-3" ng-if="$index + 1 < relatedArtists.length">
+                                      {{rel = $index + 1;""}}
+                                      <h5>
+                                          <b>{{artist15Char(relatedArtists[rel])}}</b>
+                                      </h5>
+                                      <div>
+                                          <img src={{$parent.getImageUrl(relatedArtists[rel])}} style="max-width:100%; max-height:200px">
+                                      </div>
+                                  </div>
+                                  <div class="col-lg-3 col-md-3 col-sm-3" ng-if="$index + 2 < relatedArtists.length">
+                                      {{rel = $index + 2;""}}
+                                      <h5>
+                                          <b>{{artist15Char(relatedArtists[rel])}}</b>
+                                      </h5>
+                                      <div>
+                                          <img src={{$parent.getImageUrl(relatedArtists[rel])}} style="max-width:100%; max-height:200px">
+                                      </div>
+                                  </div>
+                                  <div class="col-lg-3 col-md-3 col-sm-3" ng-if="$index + 3 < relatedArtists.length">
+                                      {{rel = $index + 3;""}}
+                                      <h5>
+                                          <b>{{artist15Char(relatedArtists[rel])}}</b>
+                                      </h5>
+                                      <div>
+                                          <img src={{$parent.getImageUrl(relatedArtists[rel])}} style="max-width:100%; max-height:200px">
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                          <div>
+                              <br>
+                              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          <!-- end of myModal-->
+      </div>
+
+  </div><!-- end of row-->
+</div> <!-- end of container --> 
+</body>
+</html>
